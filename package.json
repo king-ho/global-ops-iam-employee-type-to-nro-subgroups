@@ -1,0 +1,23 @@
+{
+  "name": "global-ops-iam-employee-type-to-nro-subgroups",
+  "version": "1.0.0",
+  "description": "scheduled job to automatically add / remove users to NRO sub-groups based on their eployee-type field in IAM",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/bigquery": "^4.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/king-ho/global-ops-iam-employee-type-to-nro-subgroups.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/king-ho/global-ops-iam-employee-type-to-nro-subgroups/issues"
+  },
+  "homepage": "https://github.com/king-ho/global-ops-iam-employee-type-to-nro-subgroups#readme"
+}
