@@ -4,7 +4,8 @@
   "description": "scheduled job to automatically add / remove users to NRO sub-groups based on their eployee-type field in IAM",
   "main": "index.js",
   "dependencies": {
-    "@google-cloud/bigquery": "^4.0.0"
+    "@google-cloud/bigquery": "^4.0.0",
+    "googleapis": "^40.0.0"
   },
   "devDependencies": {},
   "scripts": {
