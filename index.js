@@ -1,43 +1,64 @@
 //--- Import the Google Cloud client library
-const {BigQuery} = require('@google-cloud/bigquery');
-const {google} = require('googleapis');
+const {
+  BigQuery
+} = require('@google-cloud/bigquery');
+const {
+  google
+} = require('googleapis');
 const fs = require('fs');
 
 //-- Set ENV Variable
-const googlejsonkeypath = "/path/to/keyfile.json"
+const googlejsonkeypathgroupsadmin = "/Users/stonian/Documents/google-keys/groupautomation-ccd2a10d7e95.json"
+const groupkey = require(googlejsonkeypathgroupsadmin)
+const googlejsonkeypath = "/Users/stonian/Documents/google-keys/groupautomation-ccd2a10d7e95.json" //"/path/to/keyfile.json"
 process.env.GOOGLE_APPLICATION_CREDENTIALS = googlejsonkeypath
 
-async function addGroup(name) {
-  //-- name should be in the format [SEC_NRO_SYMBOL/CONT_NRO_SYMBOL]-[IAM_EMPLOYEE_TYPE]-curated-group e.g. gpi-interns-curated-group
-  //-- acquire an authentication client using a service account
-  const auth = await google.auth.getClient({
-    keyFile: googlejsonkeypath,
-    scopes: [
-      'https://www.googleapis.com/auth/admin.directory.group',
-      'https://www.googleapis.com/auth/admin.directory.group.member',
+function initializeAdmin(version = "directory_v1") {
+  const client_email = groupkey.client_email;
+  // add some necessary escaping so to avoid errors when parsing the private key.
+  const private_key = groupkey.private_key.replace(/\\n/g, "\n");
+  // impersonate an account with access to ADMIN API by addding service account client ID here: https://admin.google.com/AdminHome?chromeless=1#OGX:ManageOauthClients
+  const emailToImpersonate = "curator@gp-test.org";
+  const jwtClient = new google.auth.JWT(
+    client_email,
+    null,
+    private_key,
+    ['https://www.googleapis.com/auth/admin.directory.group',
+      'https://www.googleapis.com/auth/admin.directory.group.member'
     ],
+    emailToImpersonate
+  );
+  return google.admin({
+    version: version,
+    auth: jwtClient
   });
+}
+let admin = initializeAdmin()
+// console.log(admin)
+// addGroup('gpi-interns').then(function(res){
+//   console.log("res : " + res)
+// }).catch(function(err){
+//   console.log("errs : " + err)
+// });
 
-  //-- obtain the admin client
-  const admin = google.admin({
-    version: 'directory_v1',
-    auth,
-  });
-
-  //-- insert group here
+async function addGroup(name) {
+  //-- name should be in the format [SEC_NRO_SYMBOL/CONT_NRO_SYMBOL]-[IAM_EMPLOYEE_TYPE]-curated-group e.g. gpi-interns-automated-group
   const res = await admin.groups.insert({
     requestBody: {
-      email: name+'-curated-group@greenpeace.org',
+      email: name
     },
   });
 
   console.log(res.data);
 }
-addGroup('gpi-interns').then(function(res){
-  console.log("res : " + res)
-}).catch(function(err){
-  console.log(err)
-});
+async function deleteGroup(name) {
+  //-- name should be in the format [SEC_NRO_SYMBOL/CONT_NRO_SYMBOL]-[IAM_EMPLOYEE_TYPE]-curated-group e.g. gpi-interns-automated-group
+  const res = await admin.groups.delete({
+    groupKey: name
+  });
+
+  console.log(res.data);
+}
 
 
 const projectID = "greenpeace-testing"
@@ -54,7 +75,49 @@ let emptyemployeetypecount = 0
 
 //nros.indexOf(row.CONTR_NRO_SYMBOL) === -1 ? nros.push(row.CONTR_NRO_SYMBOL);
 
-async function query() {
+async function listMembersOfGroup(group,npt) {
+  let retarr = []
+  let res = await admin.members.list({
+    groupKey: group,
+    pageToken: null
+  });
+
+  if (res.data.members !== undefined) {
+    for (var i = 0; i < res.data.members.length; i++) {
+      retarr.push(res.data.members[i].email)
+    }
+    if(res.data.nextPageToken !== undefined) {
+      listMembersOfGroup(group,res.data.nextPageToken)
+    }
+  }
+  return retarr
+}
+// listMembersOfGroup("int-functionals-automated-group@gp-test.org").then(function(res) {
+//   console.log("resss: " + res)
+// }).catch(function(err) {
+//   console.log("errs : " + err)
+// });
+
+async function addToGroup(user, group) {
+  let res = await admin.members.insert({
+    groupKey: group,
+    requestBody: {
+      email: user
+    }
+  });
+  return res
+}
+async function delFromGroup(user, group) {
+  let res = await admin.members.delete({
+    groupKey: group,
+    memberKey: user
+  });
+  return res
+}
+
+async function processGroups(type) {
+  let googlejsonkeypathbq = "/Users/stonian/Documents/google-keys/greenpeace-testing-c514737adcdb.json" //"/path/to/keyfile.json"
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = googlejsonkeypathbq
   // Create a client
   const bigqueryClient = new BigQuery();
   // Construct query
@@ -147,5 +210,89 @@ async function query() {
   fs.writeFile('groups.json', JSON.stringify(groups, null, 4), function(res) {
     console.log(res)
   })
+  // to add users to groups
+  // to add or delete groups
+  if (type == "add") {
+    for (nro in groups) {
+      if (nro != "null") {
+        console.log("-- " + nro)
+        for (employeetype in groups[nro]) {
+          let address = nro.toLowerCase() + "-" + employeetype + "s-automated-group@gp-test.org"
+          console.log("adding group : " + address)
+          //replace addGroup function to with removeGroup to remove automated groups
+          await addGroup(address).then(function(ret) {
+            console.log("successfully processed : " + address)
+          }).catch(function(err) {
+            console.log("error:" + err + " for " + address)
+          })
+        }
+      }
+    }
+  } else if (type == "delete") {
+    for (nro in groups) {
+      if (nro != "null") {
+        console.log("-- " + nro)
+        for (employeetype in groups[nro]) {
+          let address = nro.toLowerCase() + "-" + employeetype + "s-automated-group@gp-test.org"
+          console.log("deleting group : " + address)
+          //replace addGroup function to with removeGroup to remove automated groups
+          await deleteGroup(address).then(function(ret) {
+            console.log("successfully processed : " + address)
+          }).catch(function(err) {
+            console.log("error:" + err + " for " + address)
+          })
+        }
+      }
+    }
+  } else if (type == "curateusers") {
+    for (nro in groups) {
+      if (nro != "null") {
+        console.log("-- " + nro)
+        for (employeetype in groups[nro]) {
+          let address = nro.toLowerCase() + "-" + employeetype + "s-automated-group@gp-test.org"
+          console.log("adding users to : " + address + " with current size : "+ groups[nro][employeetype].length)
+          //replace addGroup function to with removeGroup to remove automated groups
+          await listMembersOfGroup(address).then(async function(ret) {
+            let currentgroupmembers = ret
+            let toupdategroupmembers = groups[nro][employeetype]
+            console.log("starting currentgroupmembers size: " + currentgroupmembers.length)
+            console.log("starting toupdategroupmembers size: " + toupdategroupmembers.length)
+            //console.log("users : " + currentgroupmembers +"\ntoadd "+toupdategroupmembers)
+            for (var i = 0; i < currentgroupmembers.length; i++) {
+              console.log("cur nur : " + i)
+              let found = false
+              for (var j = toupdategroupmembers.length-1; j >= 0; j--) {
+                if(currentgroupmembers[i]==toupdategroupmembers[j]){
+                  console.log(j+"]"+currentgroupmembers[i] + " found")
+                  found=true
+                  toupdategroupmembers.splice(j, 1);
+                  j=-1
+                }
+              }
+              if(!found){
+                console.log("removing "+currentgroupmembers[i]+" from "+ address)
+                await delFromGroup(currentgroupmembers[i],address).then(function(ret){
+                  console.log(ret)
+                }).catch(function(err){
+                  console.log(err)
+                })
+              }
+            }
+            console.log("new updatelist size: " + toupdategroupmembers.length)
+            for (var i = 0; i < toupdategroupmembers.length; i++) {
+              await addToGroup(toupdategroupmembers[i],address).then(function(ret){
+                console.log(ret)
+              }).catch(function(err){
+                console.log(err)
+              })
+            }
+          }).catch(function(err) {
+            console.log("error:" + err + " for " + address)
+          })
+        }
+      }
+    }
+  }
+
 }
-query();
+processGroups("curateusers")
