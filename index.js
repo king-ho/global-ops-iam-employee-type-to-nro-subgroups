@@ -64,7 +64,7 @@ async function deleteGroup(name) {
 const projectID = "greenpeace-testing"
 const datasetID = "IAM_Report_Testing"
 const tableID = "OPENIAM_BASIC_DATA"
-const queryAdditionals = "" // " WHERE GOOGLE_LOGIN='amelekou@gp-test.org' LIMIT 100" to get a user with two nros set and to limit number of returned results
+const queryAdditionals = " WHERE IAM_STATUS != 'DELETED' AND IAM_SECONDARY_STATUS != 'DISABLED' AND IAM_STATUS != 'PENDING_INITIAL_LOGIN'" // " WHERE GOOGLE_LOGIN='amelekou@gp-test.org' LIMIT 100" to get a user with two nros set and to limit number of returned results
 let nros = []
 let employeetypes = []
 let groups = {}
