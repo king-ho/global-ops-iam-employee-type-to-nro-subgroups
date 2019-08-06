@@ -154,22 +154,40 @@ async function processGroups(type) {
       rows[i].IAM_EMPLOYEE_TYPE = "freelancer"
     } else if (rows[i].IAM_EMPLOYEE_TYPE == "Intern") {
       rows[i].IAM_EMPLOYEE_TYPE = "intern"
-    } else if (rows[i].IAM_EMPLOYEE_TYPE == null) {
+    }  else if (rows[i].IAM_EMPLOYEE_TYPE == "Vendor") {
+      rows[i].IAM_EMPLOYEE_TYPE = "vendors"
+    }  else if (rows[i].IAM_EMPLOYEE_TYPE == null) {
       emptyemployeetypecount++
     }
 
-    //--- Check if Contracted NRO symbol exists in nros array
-    if (nros.indexOf(rows[i].CONTR_NRO_SYMBOL) === -1 && rows[i].GOOGLE_LOGIN != null) {
-      //--- Add to nros array and create a child object in groups with the same name
-      nros.push(rows[i].CONTR_NRO_SYMBOL)
-      groups[rows[i].CONTR_NRO_SYMBOL] = {}
+    let officesymbol
+    let secofficesymbol
+
+    if (rows[i].CONT_NRO_OFFICE_SYMBOL === null){
+      officesymbol=""
+    } else {
+      officesymbol="-"+rows[i].CONT_NRO_OFFICE_SYMBOL
+    }
+    if (rows[i].SEC_NRO_OFFICE_SYMBOL === null){
+      secofficesymbol=""
+    } else {
+      secofficesymbol="-"+rows[i].SEC_NRO_OFFICE_SYMBOL
     }
 
-    //--- Check if Secondary NRO symbol exists in nros array
-    if (nros.indexOf(rows[i].SEC_NRO_SYMBOL) === -1 && rows[i].GOOGLE_LOGIN != null) {
+    //--- Check if Contracted NRO symbol exists in nros array
+    if (nros.indexOf(rows[i].CONTR_NRO_SYMBOL+officesymbol) === -1 && rows[i].GOOGLE_LOGIN != null) {
       //--- Add to nros array and create a child object in groups with the same name
-      nros.push(rows[i].SEC_NRO_SYMBOL)
-      groups[rows[i].SEC_NRO_SYMBOL] = {}
+      nros.push(rows[i].CONTR_NRO_SYMBOL+officesymbol)
+      console.log("constructing:"+rows[i].CONTR_NRO_SYMBOL+officesymbol)
+      groups[rows[i].CONTR_NRO_SYMBOL+officesymbol] = {}
+    }
+
+    //--- Check if Secondary NRO symbol exists in nros array SEC_NRO_OFFICE_SYMBOL
+    if (nros.indexOf(rows[i].SEC_NRO_SYMBOL+secofficesymbol) === -1 && rows[i].GOOGLE_LOGIN != null) {
+      //--- Add to nros array and create a child object in groups with the same name
+      nros.push(rows[i].SEC_NRO_SYMBOL+secofficesymbol)
+      console.log("constructing sec:"+rows[i].SEC_NRO_SYMBOL+secofficesymbol)
+      groups[rows[i].SEC_NRO_SYMBOL+secofficesymbol] = {}
     }
     //--- Check if Employee Type exists in employeetypes array
     if (employeetypes.indexOf(rows[i].IAM_EMPLOYEE_TYPE) === -1 && rows[i].GOOGLE_LOGIN != null) {
@@ -178,23 +196,34 @@ async function processGroups(type) {
     }
 
     //--- Create array object from NRO and Employee Type based on Contracted Office
-    if (rows[i].CONTR_NRO_SYMBOL != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
-      groups[rows[i].CONTR_NRO_SYMBOL][rows[i].IAM_EMPLOYEE_TYPE] = []
+    if (rows[i].CONTR_NRO_SYMBOL+officesymbol != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
+      groups[rows[i].CONTR_NRO_SYMBOL+officesymbol][rows[i].IAM_EMPLOYEE_TYPE] = []
     }
     //---Create array object from NRO and Employee Type based on Secondary Office
-    if (rows[i].SEC_NRO_SYMBOL != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
-      groups[rows[i].SEC_NRO_SYMBOL][rows[i].IAM_EMPLOYEE_TYPE] = []
+    if (rows[i].SEC_NRO_SYMBOL+secofficesymbol != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
+      groups[rows[i].SEC_NRO_SYMBOL+secofficesymbol][rows[i].IAM_EMPLOYEE_TYPE] = []
     }
   }
 
   for (var i = 0; i < rows.length; i++) {
-    if (rows[i].CONTR_NRO_SYMBOL != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
+    if (rows[i].CONT_NRO_OFFICE_SYMBOL === null){
+      officesymbol=""
+    } else {
+      officesymbol="-"+rows[i].CONT_NRO_OFFICE_SYMBOL
+    }
+    if (rows[i].SEC_NRO_OFFICE_SYMBOL === null){
+      secofficesymbol=""
+    } else {
+      secofficesymbol="-"+rows[i].SEC_NRO_OFFICE_SYMBOL
+    }
+
+    if (rows[i].CONTR_NRO_SYMBOL+officesymbol != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
       //--- Add user to the subgroup of Contracted NRO and Employee Type
-      groups[rows[i].CONTR_NRO_SYMBOL][rows[i].IAM_EMPLOYEE_TYPE].push(rows[i].GOOGLE_LOGIN)
+      groups[rows[i].CONTR_NRO_SYMBOL+officesymbol][rows[i].IAM_EMPLOYEE_TYPE].push(rows[i].GOOGLE_LOGIN)
       contcount++
       //--- Add user to the subgroup of Secondary NRO and Employee Type if Secondary exists
-      if (rows[i].SEC_NRO_SYMBOL != null) {
-        groups[rows[i].SEC_NRO_SYMBOL][rows[i].IAM_EMPLOYEE_TYPE].push(rows[i].GOOGLE_LOGIN)
+      if (rows[i].SEC_NRO_SYMBOL+secofficesymbol != null) {
+        groups[rows[i].SEC_NRO_SYMBOL+secofficesymbol][rows[i].IAM_EMPLOYEE_TYPE].push(rows[i].GOOGLE_LOGIN)
         seccount++
       }
     }
@@ -287,7 +316,7 @@ async function processGroups(type) {
               })
             }
           }).catch(function(err) {
-            console.log("error:" + err + " for " + address)
+            console.log("errord:" + err + " for " + address)
           })
         }
       }

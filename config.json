@@ -1,0 +1,8 @@
+{
+  "//":"admin permissions key for groups / directory API.",
+  "google-groups-json-key":"google-keys/[ADD YOUR JSON KEY PATH HERE]",
+  "//":"read permissions key for bq",
+  "google-bq-json-key":"google-keys/[ADD YOUR JSON KEY PATH HERE]",
+  "//":"delete = remove all curate groups|| curateusers = update curated groups.",
+  "mode":"delete/curateusers"
+}
