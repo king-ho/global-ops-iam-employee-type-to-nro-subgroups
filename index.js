@@ -64,7 +64,7 @@ async function deleteGroup(name) {
 const projectID = "greenpeace-testing"
 const datasetID = "IAM_Report_Testing"
 const tableID = "OPENIAM_BASIC_DATA"
-const queryAdditionals = " WHERE IAM_STATUS != 'DELETED' AND IAM_SECONDARY_STATUS != 'DISABLED' AND IAM_STATUS != 'PENDING_INITIAL_LOGIN'" // " WHERE GOOGLE_LOGIN='amelekou@gp-test.org' LIMIT 100" to get a user with two nros set and to limit number of returned results
+const queryAdditionals = " WHERE IAM_STATUS != 'DELETED' OR IAM_SECONDARY_STATUS != 'DISABLED' OR IAM_STATUS != 'PENDING_INITIAL_LOGIN'" // " WHERE GOOGLE_LOGIN='amelekou@gp-test.org' LIMIT 100" to get a user with two nros set and to limit number of returned results
 let nros = []
 let employeetypes = []
 let groups = {}
@@ -183,7 +183,7 @@ async function processGroups(type) {
     }
 
     //--- Check if Secondary NRO symbol exists in nros array SEC_NRO_OFFICE_SYMBOL
-    if (nros.indexOf(rows[i].SEC_NRO_SYMBOL+secofficesymbol) === -1 && rows[i].GOOGLE_LOGIN != null) {
+    if (rows[i].SEC_NRO_SYMBOL+secofficesymbol != "null" && nros.indexOf(rows[i].SEC_NRO_SYMBOL+secofficesymbol) === -1 && rows[i].GOOGLE_LOGIN != null) {
       //--- Add to nros array and create a child object in groups with the same name
       nros.push(rows[i].SEC_NRO_SYMBOL+secofficesymbol)
       console.log("constructing sec:"+rows[i].SEC_NRO_SYMBOL+secofficesymbol)
@@ -200,7 +200,7 @@ async function processGroups(type) {
       groups[rows[i].CONTR_NRO_SYMBOL+officesymbol][rows[i].IAM_EMPLOYEE_TYPE] = []
     }
     //---Create array object from NRO and Employee Type based on Secondary Office
-    if (rows[i].SEC_NRO_SYMBOL+secofficesymbol != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
+    if (rows[i].SEC_NRO_SYMBOL+secofficesymbol != "null" && rows[i].SEC_NRO_SYMBOL+secofficesymbol != "null" && rows[i].SEC_NRO_SYMBOL+secofficesymbol != null && rows[i].IAM_EMPLOYEE_TYPE != null && rows[i].GOOGLE_LOGIN != null) {
       groups[rows[i].SEC_NRO_SYMBOL+secofficesymbol][rows[i].IAM_EMPLOYEE_TYPE] = []
     }
   }
@@ -222,7 +222,7 @@ async function processGroups(type) {
       groups[rows[i].CONTR_NRO_SYMBOL+officesymbol][rows[i].IAM_EMPLOYEE_TYPE].push(rows[i].GOOGLE_LOGIN)
       contcount++
       //--- Add user to the subgroup of Secondary NRO and Employee Type if Secondary exists
-      if (rows[i].SEC_NRO_SYMBOL+secofficesymbol != null) {
+      if (rows[i].SEC_NRO_SYMBOL != null) {
         groups[rows[i].SEC_NRO_SYMBOL+secofficesymbol][rows[i].IAM_EMPLOYEE_TYPE].push(rows[i].GOOGLE_LOGIN)
         seccount++
       }
@@ -324,4 +324,4 @@ async function processGroups(type) {
   }
 
 }
-processGroups("curateusers")
+processGroups("testing")
